@@ -1,6 +1,6 @@
 """
 P2P (Probability to Pay) Scorer Service.
-Includes ML model loading with rule-based fallback.
+Includes PyTorch ML model loading with rule-based fallback.
 """
 from typing import Optional
 import os
@@ -11,28 +11,45 @@ logger = logging.getLogger(__name__)
 
 class P2PScorer:
     """
-    Probability to Pay scorer with ML model and rule-based fallback.
+    Probability to Pay scorer with PyTorch ML model and rule-based fallback.
+    
+    To use ML model:
+    1. Train model on Kaggle using backend/training/train_p2p_model.py
+    2. Download the .pth file
+    3. Place it at backend/models/p2p_model.pth
+    4. Restart the server
     """
     
     def __init__(self, model_path: Optional[str] = None):
         self.model = None
         self.model_loaded = False
-        self.model_path = model_path or os.getenv("P2P_MODEL_PATH", "models/p2p_model.pkl")
+        self.model_path = model_path or os.getenv(
+            "P2P_MODEL_PATH", 
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "models", "p2p_model.pth")
+        )
         self._try_load_model()
     
     def _try_load_model(self):
-        """Attempt to load the ML model, fail gracefully to fallback."""
+        """Attempt to load the PyTorch ML model, fail gracefully to fallback."""
         try:
-            import joblib
+            import torch
+            from ..ml.models import P2PNet
+            
             if os.path.exists(self.model_path):
-                self.model = joblib.load(self.model_path)
+                self.model = P2PNet()
+                self.model.load_state_dict(torch.load(self.model_path, map_location="cpu"))
+                self.model.eval()
                 self.model_loaded = True
-                logger.info(f"P2P model loaded from {self.model_path}")
+                logger.info(f"✅ P2P PyTorch model loaded from {self.model_path}")
             else:
-                logger.warning(f"P2P model not found at {self.model_path}, using rule-based fallback")
+                logger.warning(f"⚠️ P2P model not found at {self.model_path}, using rule-based fallback")
+        except ImportError as e:
+            logger.warning(f"PyTorch not available: {e}, using rule-based fallback")
+            self.model_loaded = False
         except Exception as e:
             logger.warning(f"Failed to load P2P model: {e}, using rule-based fallback")
             self.model_loaded = False
+
     
     def calculate_score(
         self,
@@ -61,24 +78,34 @@ class P2PScorer:
         previous_payments: int,
         segment: str
     ) -> dict:
-        """Use ML model for prediction."""
+        """Use PyTorch ML model for prediction."""
         try:
-            # Prepare features (adjust based on actual model features)
-            features = [
-                debt_amount,
-                days_overdue,
-                1 if has_dispute else 0,
-                previous_payments,
-                {"retail": 0, "commercial": 1, "international": 2}.get(segment, 0)
-            ]
+            import torch
             
-            score = float(self.model.predict_proba([features])[0][1])
+            # Normalize features (same normalization as training)
+            normalized_debt = min(debt_amount / 50000, 1.0)
+            normalized_days = min(days_overdue / 180, 1.0)
+            
+            # Prepare features tensor (8 features as expected by P2PNet)
+            features = torch.FloatTensor([
+                normalized_debt,
+                normalized_days,
+                1.0 if has_dispute else 0.0,
+                min(previous_payments / 5.0, 1.0),  # Normalized
+                1.0 if segment == "retail" else 0.0,
+                1.0 if segment == "commercial" else 0.0,
+                1.0 if segment == "international" else 0.0,
+                0.5  # Default payment history ratio
+            ]).unsqueeze(0)  # Add batch dimension
+            
+            with torch.no_grad():
+                score = self.model(features).item()
             
             return {
                 "score": max(0.0, min(1.0, score)),
                 "method": "ml",
                 "factors": {
-                    "model": "xgboost",
+                    "model": "pytorch_p2pnet",
                     "confidence": "high"
                 }
             }
