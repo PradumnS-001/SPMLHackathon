@@ -11,15 +11,15 @@ import {
     Search,
     ChevronDown
 } from 'lucide-react';
-import { getCases, assignCases, Case, AssignmentResult } from '../services/api';
+import { getCases, assignCases } from '../services/api';
 import './Cases.css';
 
 export default function Cases() {
-    const [cases, setCases] = useState<Case[]>([]);
+    const [cases, setCases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [assigning, setAssigning] = useState(false);
     const [filter, setFilter] = useState({ status: '', segment: '' });
-    const [assignmentResults, setAssignmentResults] = useState<AssignmentResult[] | null>(null);
+    const [assignmentResults, setAssignmentResults] = useState(null);
 
     useEffect(() => {
         loadCases();
@@ -28,7 +28,7 @@ export default function Cases() {
     const loadCases = async () => {
         setLoading(true);
         try {
-            const params: Record<string, any> = {};
+            const params = {};
             if (filter.status) params.status = filter.status;
             if (filter.segment) params.segment = filter.segment;
 
@@ -54,13 +54,13 @@ export default function Cases() {
         }
     };
 
-    const getP2PClass = (score: number) => {
+    const getP2PClass = (score) => {
         if (score >= 0.7) return 'high';
         if (score >= 0.4) return 'medium';
         return 'low';
     };
 
-    const formatCurrency = (value: number) =>
+    const formatCurrency = (value) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 
     return (

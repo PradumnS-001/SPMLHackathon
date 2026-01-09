@@ -12,13 +12,13 @@ import {
     AlertCircle,
     User
 } from 'lucide-react';
-import { getAgencyCases, resolveCase, Case } from '../services/api';
+import { getAgencyCases, resolveCase } from '../services/api';
 import './AgencyPortal.css';
 
 export default function AgencyPortal() {
-    const [cases, setCases] = useState<Case[]>([]);
+    const [cases, setCases] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedCase, setSelectedCase] = useState<Case | null>(null);
+    const [selectedCase, setSelectedCase] = useState(null);
     const [resolveAmount, setResolveAmount] = useState('');
 
     // Demo: Using agency ID 1
@@ -39,7 +39,7 @@ export default function AgencyPortal() {
         }
     };
 
-    const handleResolve = async (caseItem: Case) => {
+    const handleResolve = async (caseItem) => {
         const amount = parseFloat(resolveAmount);
         if (isNaN(amount) || amount <= 0) return;
 
@@ -53,10 +53,10 @@ export default function AgencyPortal() {
         }
     };
 
-    const formatCurrency = (value: number) =>
+    const formatCurrency = (value) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 
-    const getP2PClass = (score: number) => {
+    const getP2PClass = (score) => {
         if (score >= 0.7) return 'high';
         if (score >= 0.4) return 'medium';
         return 'low';

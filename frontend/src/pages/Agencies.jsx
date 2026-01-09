@@ -4,11 +4,11 @@
  */
 import { useState, useEffect } from 'react';
 import { Building2, Plus, TrendingUp, Users, Shield } from 'lucide-react';
-import { getAgencies, Agency } from '../services/api';
+import { getAgencies } from '../services/api';
 import './Agencies.css';
 
 export default function Agencies() {
-    const [agencies, setAgencies] = useState<Agency[]>([]);
+    const [agencies, setAgencies] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

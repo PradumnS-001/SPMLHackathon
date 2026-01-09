@@ -11,15 +11,15 @@ import {
     FileText,
     Send
 } from 'lucide-react';
-import { getViolations, checkTranscript, getComplianceStats, Violation } from '../services/api';
+import { getViolations, checkTranscript, getComplianceStats } from '../services/api';
 import './Compliance.css';
 
 export default function Compliance() {
-    const [violations, setViolations] = useState<Violation[]>([]);
-    const [stats, setStats] = useState<any>(null);
+    const [violations, setViolations] = useState([]);
+    const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [transcript, setTranscript] = useState('');
-    const [checkResult, setCheckResult] = useState<any>(null);
+    const [checkResult, setCheckResult] = useState(null);
     const [checking, setChecking] = useState(false);
 
     useEffect(() => {
@@ -55,7 +55,7 @@ export default function Compliance() {
         }
     };
 
-    const getSeverityIcon = (severity: string) => {
+    const getSeverityIcon = (severity) => {
         switch (severity) {
             case 'critical': return <XCircle className="severity-icon critical" />;
             case 'high': return <AlertTriangle className="severity-icon high" />;
@@ -98,7 +98,7 @@ export default function Compliance() {
                         <span className="stat-label">Unresolved</span>
                     </div>
                 </div>
-                {stats?.by_severity?.map((s: any) => (
+                {stats?.by_severity?.map((s) => (
                     <div key={s.severity} className={`stat-card ${s.severity}`}>
                         <div>
                             <span className="stat-value">{s.count}</span>
@@ -153,7 +153,7 @@ export default function Compliance() {
 
                             {checkResult.violations.length > 0 && (
                                 <ul className="violation-list">
-                                    {checkResult.violations.map((v: any, i: number) => (
+                                    {checkResult.violations.map((v, i) => (
                                         <li key={i}>
                                             <strong>{v.type}:</strong> {v.keyword || v.disclosure || v.contact_time}
                                         </li>
@@ -165,7 +165,7 @@ export default function Compliance() {
                                 <div className="recommendations">
                                     <strong>Recommendations:</strong>
                                     <ul>
-                                        {checkResult.recommendations.map((r: string, i: number) => (
+                                        {checkResult.recommendations.map((r, i) => (
                                             <li key={i}>{r}</li>
                                         ))}
                                     </ul>

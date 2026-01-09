@@ -15,17 +15,17 @@ import {
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, LineChart, Line
+    PieChart, Pie, Cell
 } from 'recharts';
-import { getDashboardStats, getCasesByStatus, getAgencyPerformance, DashboardStats, AgencyPerformance } from '../services/api';
+import { getDashboardStats, getCasesByStatus, getAgencyPerformance } from '../services/api';
 import './Dashboard.css';
 
 const COLORS = ['#3B82F6', '#F59E0B', '#8B5CF6', '#10B981', '#EF4444'];
 
 export default function Dashboard() {
-    const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [casesByStatus, setCasesByStatus] = useState<any[]>([]);
-    const [agencyPerf, setAgencyPerf] = useState<AgencyPerformance[]>([]);
+    const [stats, setStats] = useState(null);
+    const [casesByStatus, setCasesByStatus] = useState([]);
+    const [agencyPerf, setAgencyPerf] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -58,7 +58,7 @@ export default function Dashboard() {
         );
     }
 
-    const formatCurrency = (value: number) =>
+    const formatCurrency = (value) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 
     return (
@@ -96,10 +96,10 @@ export default function Dashboard() {
                     </div>
                     <div className="kpi-content">
                         <span className="kpi-label">Recovery Rate</span>
-                        <span className="kpi-value">{stats?.recovery_rate.toFixed(1)}%</span>
+                        <span className="kpi-value">{stats?.recovery_rate?.toFixed(1) || 0}%</span>
                         <div className="kpi-change positive">
                             <TrendingUp size={14} />
-                            <span>{stats?.resolved_cases} cases resolved</span>
+                            <span>{stats?.resolved_cases || 0} cases resolved</span>
                         </div>
                     </div>
                 </div>
@@ -110,10 +110,10 @@ export default function Dashboard() {
                     </div>
                     <div className="kpi-content">
                         <span className="kpi-label">Avg Days Overdue</span>
-                        <span className="kpi-value">{stats?.avg_days_overdue.toFixed(0)}</span>
+                        <span className="kpi-value">{stats?.avg_days_overdue?.toFixed(0) || 0}</span>
                         <div className="kpi-change negative">
                             <TrendingDown size={14} />
-                            <span>{stats?.unassigned_cases} unassigned</span>
+                            <span>{stats?.unassigned_cases || 0} unassigned</span>
                         </div>
                     </div>
                 </div>
@@ -124,10 +124,10 @@ export default function Dashboard() {
                     </div>
                     <div className="kpi-content">
                         <span className="kpi-label">SLA Compliance</span>
-                        <span className="kpi-value">{stats?.sla_compliance.toFixed(1)}%</span>
+                        <span className="kpi-value">{stats?.sla_compliance?.toFixed(1) || 0}%</span>
                         <div className="kpi-change positive">
                             <TrendingUp size={14} />
-                            <span>{stats?.total_cases} total cases</span>
+                            <span>{stats?.total_cases || 0} total cases</span>
                         </div>
                     </div>
                 </div>
