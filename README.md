@@ -48,6 +48,33 @@ npm run dev
 
 ---
 
+## 🗄️ Database
+
+The app uses **SQLite** - a simple file-based database (no setup required!).
+
+```
+backend/
+├── dca_management.db   ← Created automatically by seed_data.py
+└── seed_data.py        ← Run this to create DB + sample data
+```
+
+### What `seed_data.py` creates:
+- **100 sample cases** with realistic P2P scores
+- **5 agencies** (RecoverMax, Commercial Collections, etc.)
+- **Demo users** (admin, viewer, agency agents)
+- **10 sample violations**
+
+### Reset Database
+```bash
+del backend\dca_management.db   # Windows
+# rm backend/dca_management.db  # Linux/Mac
+python seed_data.py
+```
+
+> **Note**: The database file is created when you first run `seed_data.py`. It doesn't exist until then!
+
+---
+
 ## 🧠 ML Model Training (Kaggle)
 
 The system supports custom-trained PyTorch models. Train on Kaggle, export `.pth`, and drop into the project!
