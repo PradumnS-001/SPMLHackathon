@@ -1,0 +1,252 @@
+.compliance-page {
+    animation: fadeIn 0.3s ease;
+}
+
+.compliance-stats {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+    flex-wrap: wrap;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+}
+
+.stat-card .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: block;
+}
+
+.stat-card .stat-label {
+    font-size: 0.75rem;
+    text-transform: capitalize;
+}
+
+.stat-card.warning {
+    border-left: 3px solid var(--warning);
+}
+
+.stat-card.critical {
+    border-left: 3px solid var(--danger);
+}
+
+.stat-card.high {
+    border-left: 3px solid #EF4444;
+}
+
+.stat-card.medium {
+    border-left: 3px solid var(--warning);
+}
+
+.stat-card.low {
+    border-left: 3px solid var(--info);
+}
+
+.compliance-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+}
+
+.transcript-checker .card-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.transcript-input {
+    width: 100%;
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.875rem;
+    resize: vertical;
+    margin-bottom: var(--spacing-md);
+}
+
+.transcript-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.check-btn {
+    width: 100%;
+}
+
+.check-result {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+}
+
+.check-result.compliant {
+    background: var(--success-bg);
+    border: 1px solid var(--success);
+}
+
+.check-result.non-compliant {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger);
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.check-result.compliant .result-header {
+    color: var(--success);
+}
+
+.check-result.non-compliant .result-header {
+    color: var(--danger);
+}
+
+.violation-list {
+    list-style: none;
+    font-size: 0.875rem;
+    margin: var(--spacing-sm) 0;
+}
+
+.violation-list li {
+    padding: var(--spacing-xs) 0;
+    color: var(--text-primary);
+}
+
+.recommendations {
+    margin-top: var(--spacing-md);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.recommendations ul {
+    margin-top: var(--spacing-sm);
+    padding-left: var(--spacing-lg);
+}
+
+.violations-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.violation-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.severity-icon {
+    flex-shrink: 0;
+}
+
+.severity-icon.critical {
+    color: var(--danger);
+}
+
+.severity-icon.high {
+    color: #EF4444;
+}
+
+.severity-icon.medium {
+    color: var(--warning);
+}
+
+.severity-icon.low {
+    color: var(--info);
+}
+
+.violation-content {
+    flex: 1;
+}
+
+.violation-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.violation-type {
+    font-weight: 600;
+    text-transform: capitalize;
+    color: var(--text-primary);
+}
+
+.severity-badge {
+    font-size: 0.625rem;
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.severity-badge.critical {
+    background: var(--danger);
+    color: white;
+}
+
+.severity-badge.high {
+    background: #EF4444;
+    color: white;
+}
+
+.severity-badge.medium {
+    background: var(--warning);
+    color: #1a1a1a;
+}
+
+.severity-badge.low {
+    background: var(--info);
+    color: white;
+}
+
+.violation-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.violation-meta {
+    display: flex;
+    gap: var(--spacing-md);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.violation-status .resolved {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--success);
+    font-size: 0.875rem;
+}
+
+.btn-sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.75rem;
+}
+
+@media (max-width: 1024px) {
+    .compliance-grid {
+        grid-template-columns: 1fr;
+    }
+}

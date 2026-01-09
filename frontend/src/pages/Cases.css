@@ -1,0 +1,140 @@
+.cases-page {
+    animation: fadeIn 0.3s ease;
+}
+
+.assignment-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--success-bg);
+    border: 1px solid var(--success);
+    border-radius: var(--radius-md);
+    color: var(--success);
+    margin-bottom: var(--spacing-lg);
+}
+
+.assignment-banner button {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--success);
+    font-size: 1.25rem;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.assignment-banner button:hover {
+    opacity: 1;
+}
+
+.filters-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--text-secondary);
+}
+
+.filter-group .form-select {
+    min-width: 150px;
+}
+
+.case-count {
+    margin-left: auto;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.invoice-id {
+    font-family: monospace;
+    font-weight: 600;
+    color: var(--primary-light);
+}
+
+.customer-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.customer-name {
+    font-weight: 500;
+}
+
+.customer-id {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.amount {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.days-badge {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.days-badge.normal {
+    background: var(--info-bg);
+    color: var(--info);
+}
+
+.days-badge.warning {
+    background: var(--warning-bg);
+    color: var(--warning);
+}
+
+.days-badge.danger {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.segment-badge {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.segment-badge.retail {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+}
+
+.segment-badge.commercial {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8B5CF6;
+}
+
+.segment-badge.international {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10B981;
+}
+
+.agency-assigned {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.p2p-score span {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
