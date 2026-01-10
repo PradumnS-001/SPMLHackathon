@@ -1,16 +1,15 @@
 # ===================================================
-# FedEx DCA - P2P Model Training Notebook
+# FedEx DCA - P2P Model Training (Kaggle Notebook)
 # ===================================================
-# Use this notebook on Kaggle to train your P2P model
-# After training, download the .pth file and place it in:
-# backend/models/p2p_model.pth
+# Uses realistic FedEx ERP-style data
+# Upload fedex_training_data.csv to Kaggle and run this
 # ===================================================
 
 # %% [markdown]
 # # P2P (Probability to Pay) Model Training
 # 
 # This notebook trains a neural network to predict the probability 
-# that a debtor will pay their outstanding debt.
+# that a customer will pay their outstanding FedEx invoice.
 
 # %% Import libraries
 import numpy as np
@@ -20,7 +19,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 import matplotlib.pyplot as plt
 
 # %% Define the model (MUST match backend/app/ml/models.py)
@@ -29,14 +28,14 @@ class P2PNet(nn.Module):
     Neural network for Probability-to-Pay prediction.
     
     Input features (8 features):
-    - debt_amount (normalized)
-    - days_overdue (normalized)
-    - has_dispute (0/1)
-    - previous_payments (count)
+    - outstanding_balance (normalized)
+    - days_past_due (normalized)
+    - dispute_flag (0/1)
+    - payment_count (normalized)
     - segment_retail (0/1)
     - segment_commercial (0/1)
     - segment_international (0/1)
-    - payment_history_ratio
+    - risk_score (0-1)
     """
     
     def __init__(self, input_size=8, hidden_sizes=[64, 32, 16]):
@@ -60,75 +59,70 @@ class P2PNet(nn.Module):
     def forward(self, x):
         return self.network(x)
 
-# %% Load and prepare your dataset
+
+# %% Load FedEx training data
 # ===================================================
-# REPLACE THIS WITH YOUR ACTUAL DATASET
+# Upload fedex_training_data.csv to Kaggle first!
 # ===================================================
 
-# Example: Generate synthetic data for demonstration
-np.random.seed(42)
-n_samples = 10000
-
-# Generate synthetic features
-data = {
-    'debt_amount': np.random.exponential(5000, n_samples),
-    'days_overdue': np.random.exponential(30, n_samples),
-    'has_dispute': np.random.binomial(1, 0.15, n_samples),
-    'previous_payments': np.random.poisson(1, n_samples),
-    'segment': np.random.choice(['retail', 'commercial', 'international'], n_samples, p=[0.5, 0.35, 0.15]),
-    'payment_history_ratio': np.random.beta(2, 5, n_samples)
-}
-
-df = pd.DataFrame(data)
-
-# Create target variable (1 = paid, 0 = not paid)
-# This is a synthetic formula - replace with your actual labels
-probability = (
-    0.5 
-    - 0.01 * np.clip(df['days_overdue'], 0, 30) / 30
-    - 0.3 * df['has_dispute']
-    + 0.2 * df['previous_payments'].clip(0, 3) / 3
-    + 0.1 * df['payment_history_ratio']
-    - 0.1 * np.log1p(df['debt_amount']) / 10
-)
-df['paid'] = (np.random.random(n_samples) < probability).astype(int)
-
+df = pd.read_csv('fedex_training_data.csv')
 print(f"Dataset shape: {df.shape}")
-print(f"Payment rate: {df['paid'].mean():.2%}")
+print(f"\nPayment rate: {df['paid'].mean():.2%}")
+print(f"\nColumn info:")
+print(df.info())
 df.head()
 
-# %% Feature engineering
-# One-hot encode segment
-df['segment_retail'] = (df['segment'] == 'retail').astype(int)
-df['segment_commercial'] = (df['segment'] == 'commercial').astype(int)
-df['segment_international'] = (df['segment'] == 'international').astype(int)
 
-# Select features (must match the model input)
-feature_columns = [
-    'debt_amount',
-    'days_overdue', 
-    'has_dispute',
-    'previous_payments',
-    'segment_retail',
-    'segment_commercial',
-    'segment_international',
-    'payment_history_ratio'
-]
+# %% Feature Engineering
+print("Preparing features...")
 
-X = df[feature_columns].values
-y = df['paid'].values
+# Create segment one-hot encoding
+df['segment_retail'] = (df['customer_segment'] == 'retail').astype(int)
+df['segment_commercial'] = (df['customer_segment'] == 'commercial').astype(int)
+df['segment_international'] = (df['customer_segment'] == 'international').astype(int)
 
 # Normalize numerical features
 scaler = StandardScaler()
-X[:, :2] = scaler.fit_transform(X[:, :2])  # Normalize debt_amount and days_overdue
 
-# Train/test split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Select and prepare features (8 features to match P2PNet)
+feature_columns = [
+    'outstanding_balance',
+    'days_past_due', 
+    'dispute_flag',
+    'payment_count',
+    'segment_retail',
+    'segment_commercial',
+    'segment_international',
+    'risk_score'
+]
+
+# Create feature matrix
+X = df[feature_columns].copy()
+
+# Normalize continuous features
+X['outstanding_balance'] = scaler.fit_transform(X[['outstanding_balance']])
+X['days_past_due'] = scaler.fit_transform(X[['days_past_due']])
+X['payment_count'] = X['payment_count'] / X['payment_count'].max()
+
+X = X.values.astype(np.float32)
+y = df['paid'].values.astype(np.float32)
+
+print(f"\nFeature matrix shape: {X.shape}")
+print(f"Target distribution: {np.bincount(y.astype(int))}")
+
+
+# %% Train/Test Split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
 
 print(f"Training samples: {len(X_train)}")
 print(f"Test samples: {len(X_test)}")
+print(f"Training payment rate: {y_train.mean():.2%}")
+print(f"Test payment rate: {y_test.mean():.2%}")
 
-# %% Create PyTorch datasets
+
+# %% Create PyTorch DataLoaders
 X_train_tensor = torch.FloatTensor(X_train)
 y_train_tensor = torch.FloatTensor(y_train).unsqueeze(1)
 X_test_tensor = torch.FloatTensor(X_test)
@@ -137,28 +131,35 @@ y_test_tensor = torch.FloatTensor(y_test).unsqueeze(1)
 train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
 test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
 
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
-# %% Initialize model, loss, optimizer
+
+# %% Initialize Model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 
 model = P2PNet(input_size=8).to(device)
 criterion = nn.BCELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, factor=0.5)
+optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.5)
 
+print("\nModel architecture:")
 print(model)
 
-# %% Training loop
-epochs = 50
+
+# %% Training Loop
+epochs = 100
 train_losses = []
 test_losses = []
+test_accs = []
 best_loss = float('inf')
+patience = 20
+patience_counter = 0
 
+print("\nStarting training...")
 for epoch in range(epochs):
-    # Training
+    # Training phase
     model.train()
     train_loss = 0
     for X_batch, y_batch in train_loader:
@@ -175,60 +176,111 @@ for epoch in range(epochs):
     train_loss /= len(train_loader)
     train_losses.append(train_loss)
     
-    # Evaluation
+    # Evaluation phase
     model.eval()
     test_loss = 0
+    correct = 0
+    total = 0
+    
     with torch.no_grad():
         for X_batch, y_batch in test_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             outputs = model(X_batch)
             loss = criterion(outputs, y_batch)
             test_loss += loss.item()
+            
+            predicted = (outputs > 0.5).float()
+            total += y_batch.size(0)
+            correct += (predicted == y_batch).sum().item()
     
     test_loss /= len(test_loader)
+    test_acc = correct / total
     test_losses.append(test_loss)
+    test_accs.append(test_acc)
     
     scheduler.step(test_loss)
     
-    # Save best model
+    # Early stopping & best model saving
     if test_loss < best_loss:
         best_loss = test_loss
         torch.save(model.state_dict(), 'p2p_model.pth')
+        patience_counter = 0
+    else:
+        patience_counter += 1
     
     if (epoch + 1) % 10 == 0:
-        print(f"Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}")
+        print(f"Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}, Acc: {test_acc:.2%}")
+    
+    if patience_counter >= patience:
+        print(f"\nEarly stopping at epoch {epoch+1}")
+        break
 
 print(f"\nBest test loss: {best_loss:.4f}")
 
-# %% Plot training curves
-plt.figure(figsize=(10, 5))
-plt.plot(train_losses, label='Train Loss')
-plt.plot(test_losses, label='Test Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.title('P2P Model Training')
-plt.legend()
-plt.grid(True)
-plt.savefig('training_curve.png')
+
+# %% Plot Training Curves
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Loss curves
+axes[0].plot(train_losses, label='Train Loss', color='#4D148C')
+axes[0].plot(test_losses, label='Test Loss', color='#FF6600')
+axes[0].set_xlabel('Epoch')
+axes[0].set_ylabel('Loss (BCE)')
+axes[0].set_title('Training & Test Loss')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+# Accuracy curve
+axes[1].plot(test_accs, label='Test Accuracy', color='#10B981')
+axes[1].set_xlabel('Epoch')
+axes[1].set_ylabel('Accuracy')
+axes[1].set_title('Test Accuracy')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('training_curves.png', dpi=150)
 plt.show()
 
-# %% Evaluate final model
+
+# %% Final Evaluation
 model.load_state_dict(torch.load('p2p_model.pth'))
 model.eval()
 
 with torch.no_grad():
     predictions = model(X_test_tensor.to(device)).cpu().numpy()
 
-# Calculate accuracy
-pred_classes = (predictions > 0.5).astype(int)
-accuracy = (pred_classes == y_test.reshape(-1, 1)).mean()
-print(f"Test Accuracy: {accuracy:.2%}")
+pred_classes = (predictions > 0.5).astype(int).flatten()
+true_classes = y_test.astype(int)
 
-# %% Save the model
-# ===================================================
-# DOWNLOAD THIS FILE AND PLACE IT IN:
-# backend/models/p2p_model.pth
-# ===================================================
-print("\n✅ Model saved as 'p2p_model.pth'")
-print("📥 Download this file and place it in: backend/models/p2p_model.pth")
-print("🔄 Restart the backend server to load the new model!")
+# Confusion matrix
+from sklearn.metrics import confusion_matrix, classification_report
+cm = confusion_matrix(true_classes, pred_classes)
+
+print("Confusion Matrix:")
+print(cm)
+print("\nClassification Report:")
+print(classification_report(true_classes, pred_classes, target_names=['Will NOT Pay', 'Will Pay']))
+
+
+# %% Test Sample Predictions
+print("\n" + "="*60)
+print("SAMPLE PREDICTIONS")
+print("="*60)
+
+sample_indices = [0, 5, 10, 15, 20]
+for idx in sample_indices:
+    pred = predictions[idx][0]
+    actual = y_test[idx]
+    print(f"Sample {idx}: Predicted P2P={pred:.2%}, Actual={'Paid' if actual else 'Not Paid'}")
+
+
+# %% Export Model
+print("\n" + "="*60)
+print("MODEL EXPORT")
+print("="*60)
+print("✅ Model saved as 'p2p_model.pth'")
+print("📥 Download this file from Kaggle")
+print("📁 Place it in: backend/models/p2p_model.pth")
+print("🔄 Restart backend server to load new model")
+print("="*60)

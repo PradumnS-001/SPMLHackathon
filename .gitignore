@@ -59,3 +59,10 @@ frontend/build/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# ML Guides (personal reference only)
+ML_GUIDE.md
+backend/models/README.md
+
+# Training Data (too large for git)
+backend/training/*.csv

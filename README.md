@@ -75,68 +75,41 @@ python seed_data.py
 
 ---
 
-## 🧠 ML Model Training (Kaggle)
-
-The system supports custom-trained PyTorch models. Train on Kaggle, export `.pth`, and drop into the project!
-
-### Training Workflow
+## � Pipeline
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  1. KAGGLE                                                   │
-│     - Copy model class from backend/app/ml/models.py        │
-│     - Use training template: backend/training/train_p2p.py  │
-│     - Train with your dataset                                │
-│     - torch.save(model.state_dict(), "p2p_model.pth")       │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│  2. DEPLOY                                                   │
-│     - Download p2p_model.pth from Kaggle                    │
-│     - Place in: backend/models/p2p_model.pth                │
-│     - Restart server → Model auto-loads! ✅                  │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│   INGEST     │────▶│  P2P SCORE   │────▶│   ASSIGN     │────▶│   COLLECT    │
+│   Case       │     │  ML Model    │     │  AI Routing  │     │   Agency     │
+└──────────────┘     └──────────────┘     └──────────────┘     └──────────────┘
+                            │                    │                    │
+                            ▼                    ▼                    ▼
+                     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+                     │  Rule-based  │     │  Round-Robin │     │  Compliance  │
+                     │  Fallback    │     │  Fallback    │     │  Monitor     │
+                     └──────────────┘     └──────────────┘     └──────────────┘
 ```
 
-### Available Models
-
-| Model | File | Purpose |
-|-------|------|---------|
-| P2P Scorer | `models/p2p_model.pth` | Predicts probability to pay |
-| Compliance | `models/compliance_model.pth` | Detects aggressive language |
-| Agency Fit | `models/agency_fit_model.pth` | Scores agency-case match |
-
-### Model Classes (Must Match!)
-
-Your Kaggle training notebook must use the **exact same model class** as defined in `backend/app/ml/models.py`:
-
-```python
-class P2PNet(nn.Module):
-    def __init__(self, input_size=8, hidden_sizes=[64, 32, 16]):
-        super(P2PNet, self).__init__()
-        # ... (copy from models.py)
-```
-
-> **⚠️ Important**: If the model architecture doesn't match, `load_state_dict()` will fail!
-
-### No Model? No Problem!
-
-If `.pth` files are missing, the system automatically uses **rule-based fallback** logic. The app works even without trained models.
+| Stage | Component | Location |
+|-------|-----------|----------|
+| **P2P Scoring** | PyTorch Neural Network | `app/ml/models.py` |
+| **Case Assignment** | Fit Score Algorithm | `app/services/case_router.py` |
+| **Compliance** | Keyword/Regex Detection | `app/services/compliance_checker.py` |
+| **Fallback** | Rule-based logic | Built into each service |
 
 ---
 
-## 📁 Project Structure
+## �📁 Project Structure
 
 ```
 SPMLHackathon/
 ├── backend/
 │   ├── app/
-│   │   ├── ml/             # PyTorch model definitions
+│   │   ├── ml/             # ML model definitions
 │   │   ├── routers/        # API endpoints
 │   │   ├── services/       # AI logic (P2P, router, compliance)
 │   │   └── models.py       # Database models
-│   ├── models/             # ⬅️ Place .pth files here!
-│   ├── training/           # Kaggle training templates
+│   ├── models/             # Trained .pth models
 │   ├── main.py
 │   └── seed_data.py
 │
