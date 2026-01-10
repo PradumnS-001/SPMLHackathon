@@ -1,11 +1,17 @@
 # Backend Dependencies
+# Requires Python 3.10-3.12 (Python 3.13 has compatibility issues)
+
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 sqlalchemy==2.0.25
 pydantic==2.5.3
 pydantic-settings==2.1.0
 python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+passlib==1.7.4
+bcrypt==4.0.1
 python-multipart==0.0.6
 httpx==0.26.0
-torch>=2.0.0
+
+# PyTorch (CPU version for smaller download)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
