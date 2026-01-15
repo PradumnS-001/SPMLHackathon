@@ -16,8 +16,7 @@ build/
 *.db
 *.sqlite3
 
-# PyTorch Models (trained models - too large for git)
-*.pth
+# Large ML Models (exclude large ones, but keep small .pth)
 *.pt
 *.pkl
 *.h5
