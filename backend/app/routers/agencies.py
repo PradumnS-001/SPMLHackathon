@@ -9,8 +9,13 @@ from typing import List, Optional
 
 from ..database import get_db
 from .. import models, schemas
+from ..auth import get_current_user
 
-router = APIRouter(prefix="/agencies", tags=["Agencies"])
+router = APIRouter(
+    prefix="/agencies", 
+    tags=["Agencies"],
+    dependencies=[Depends(get_current_user)]
+)
 
 
 @router.get("/", response_model=List[schemas.AgencyWithStats])

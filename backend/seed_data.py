@@ -4,6 +4,10 @@ Populates the database with realistic sample data for demo.
 """
 import sys
 import os
+from dotenv import load_dotenv
+
+# Load environment variables first
+load_dotenv()
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

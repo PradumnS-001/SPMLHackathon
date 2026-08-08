@@ -10,8 +10,13 @@ from datetime import datetime, timedelta
 
 from ..database import get_db
 from .. import models, schemas
+from ..auth import get_current_user
 
-router = APIRouter(prefix="/analytics", tags=["Analytics"])
+router = APIRouter(
+    prefix="/analytics", 
+    tags=["Analytics"],
+    dependencies=[Depends(get_current_user)]
+)
 
 
 @router.get("/dashboard", response_model=schemas.DashboardStats)

@@ -6,14 +6,23 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
+from dotenv import load_dotenv
 
-# SQLite database file path
+# Load environment variables from .env file
+load_dotenv()
+
+# SQLite database file path (default fallback)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dca_management.db")
 
-# Create engine with SQLite-specific settings
+# Connection arguments
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args["check_same_thread"] = False
+
+# Create engine
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False}  # Required for SQLite
+    connect_args=connect_args
 )
 
 # Session factory

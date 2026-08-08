@@ -12,8 +12,13 @@ from pydantic import BaseModel
 from ..database import get_db
 from .. import models, schemas
 from ..services import get_compliance_checker
+from ..auth import get_current_user
 
-router = APIRouter(prefix="/compliance", tags=["Compliance"])
+router = APIRouter(
+    prefix="/compliance", 
+    tags=["Compliance"],
+    dependencies=[Depends(get_current_user)]
+)
 
 
 class TranscriptCheckRequest(BaseModel):

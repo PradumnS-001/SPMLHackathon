@@ -13,7 +13,11 @@ from .. import models, schemas
 from ..services import get_p2p_scorer, CaseRouter
 from ..auth import get_current_user
 
-router = APIRouter(prefix="/cases", tags=["Cases"])
+router = APIRouter(
+    prefix="/cases", 
+    tags=["Cases"],
+    dependencies=[Depends(get_current_user)]
+)
 
 
 @router.get("/", response_model=List[schemas.CaseResponse])
