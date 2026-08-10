@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { TrendingUp, Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
@@ -25,16 +25,6 @@ export default function Login() {
             setError(err.response?.data?.detail || 'Failed to login. Please check your credentials.');
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const loadDemoCredentials = (role) => {
-        if (role === 'admin') {
-            setEmail('admin@fedex.com');
-            setPassword('admin123');
-        } else {
-            setEmail('agent1@recovermaxsolutions.com');
-            setPassword('agent123');
         }
     };
 
@@ -100,24 +90,8 @@ export default function Login() {
                     </button>
                 </form>
 
-                <div className="demo-credentials">
-                    <p>Demo Accounts</p>
-                    <div className="demo-buttons">
-                        <button 
-                            type="button" 
-                            className="demo-btn"
-                            onClick={() => loadDemoCredentials('admin')}
-                        >
-                            Admin
-                        </button>
-                        <button 
-                            type="button" 
-                            className="demo-btn"
-                            onClick={() => loadDemoCredentials('agent')}
-                        >
-                            Agency User
-                        </button>
-                    </div>
+                <div className="login-footer">
+                    <p>Don't have an account? <Link to="/register" className="register-link">Create Account</Link></p>
                 </div>
             </div>
         </div>

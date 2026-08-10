@@ -4,7 +4,7 @@ Dashboard data feeds and reporting endpoints.
 """
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, case as sql_case
+from sqlalchemy import func, and_, case as sql_case, extract
 from typing import List, Optional
 from datetime import datetime, timedelta
 
@@ -53,7 +53,7 @@ async def get_dashboard_stats(db: Session = Depends(get_db)):
             models.Case.status == "resolved",
             models.Case.resolved_at != None,
             models.Case.assigned_at != None,
-            func.julianday(models.Case.resolved_at) - func.julianday(models.Case.assigned_at) <= 30
+            extract('epoch', models.Case.resolved_at - models.Case.assigned_at) / 86400 <= 30
         )
     ).scalar() or 0
     
@@ -107,7 +107,7 @@ async def get_agency_performance(
         
         # Average resolution days
         avg_resolution = db.query(
-            func.avg(func.julianday(models.Case.resolved_at) - func.julianday(models.Case.assigned_at))
+            func.avg(extract('epoch', models.Case.resolved_at - models.Case.assigned_at) / 86400)
         ).filter(
             models.Case.agency_id == agency.id,
             models.Case.status == "resolved",

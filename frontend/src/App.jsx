@@ -8,6 +8,7 @@ import Agencies from './pages/Agencies';
 import Compliance from './pages/Compliance';
 import AgencyPortal from './pages/AgencyPortal';
 import Login from './pages/Login';
+import Register from './pages/Register';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -65,6 +66,7 @@ function App() {
                 <Routes>
                     {/* Public Route */}
                     <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
 
                     {/* Protected Routes */}
                     <Route

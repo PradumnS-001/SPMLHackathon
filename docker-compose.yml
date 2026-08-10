@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dca_backend
+    restart: always
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    networks:
+      - dca_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dca_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      # Exposing frontend on port 3000 to match local dev port
+      # Left is host port, right is container port (Nginx runs on 80 inside container)
+      - "3000:80"
+    networks:
+      - dca_network
+
+networks:
+  dca_network:
+    driver: bridge
