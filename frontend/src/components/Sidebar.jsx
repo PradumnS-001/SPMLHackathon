@@ -10,17 +10,28 @@ import {
     UserCog,
     TrendingUp
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
-const navItems = [
+const adminNavItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/cases', icon: Briefcase, label: 'Cases' },
     { path: '/agencies', icon: Building2, label: 'Agencies' },
     { path: '/compliance', icon: Shield, label: 'Compliance' },
-    { path: '/portal', icon: UserCog, label: 'Agency Portal' },
+];
+
+const agencyNavItems = [
+    { path: '/portal', icon: UserCog, label: 'My Dashboard' },
 ];
 
 export default function Sidebar() {
+    const { user } = useAuth();
+    
+    // Determine which nav items to show based on role
+    const navItems = user?.role === 'admin' 
+        ? [...adminNavItems, { path: '/portal', icon: UserCog, label: 'Agency Portal View' }] 
+        : agencyNavItems;
+
     return (
         <aside className="sidebar">
             <div className="sidebar-header">

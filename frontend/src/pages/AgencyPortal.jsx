@@ -13,16 +13,18 @@ import {
     User
 } from 'lucide-react';
 import { getAgencyCases, resolveCase } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import './AgencyPortal.css';
 
 export default function AgencyPortal() {
+    const { user } = useAuth();
     const [cases, setCases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedCase, setSelectedCase] = useState(null);
     const [resolveAmount, setResolveAmount] = useState('');
 
-    // Demo: Using agency ID 1
-    const agencyId = 1;
+    // Use actual agency ID from auth context, default to 1 for admin fallback testing
+    const agencyId = user?.agency_id || 1;
 
     useEffect(() => {
         loadCases();
