@@ -9,6 +9,8 @@ services:
     restart: always
     env_file:
       - ./backend/.env
+    
+    # Expose port 8000 for the backend container.
     ports:
       - "8000:8000"
     networks:

@@ -18,7 +18,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=List[schemas.AgencyWithStats])
+@router.get("", response_model=List[schemas.AgencyWithStats])
 async def list_agencies(
     category: Optional[str] = None,
     skip: int = Query(0, ge=0),

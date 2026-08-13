@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import ChatbotWidget from './components/ChatbotWidget';
 import Dashboard from './pages/Dashboard';
 import Cases from './pages/Cases';
 import Agencies from './pages/Agencies';
@@ -55,6 +56,7 @@ const AppLayout = ({ children }) => (
         <div className="main-content">
             <Header />
             {children}
+            <ChatbotWidget />
         </div>
     </div>
 );

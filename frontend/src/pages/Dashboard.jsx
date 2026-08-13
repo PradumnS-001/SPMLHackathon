@@ -11,7 +11,8 @@ import {
     Clock,
     CheckCircle,
     AlertTriangle,
-    Zap
+    Zap,
+    RefreshCw
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -22,30 +23,99 @@ import './Dashboard.css';
 
 const COLORS = ['#3B82F6', '#F59E0B', '#8B5CF6', '#10B981', '#EF4444'];
 
+// In-memory cache for instant tab switching (TTL: 5 minutes)
+let dashboardCache = {
+    stats: null,
+    casesByStatus: [],
+    agencyPerf: [],
+    lastRefreshed: null,
+    timestamp: 0
+};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export default function Dashboard() {
-    const [stats, setStats] = useState(null);
-    const [casesByStatus, setCasesByStatus] = useState([]);
-    const [agencyPerf, setAgencyPerf] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const isCacheValid = Boolean(dashboardCache.stats && (Date.now() - dashboardCache.timestamp < CACHE_TTL));
+
+    const [stats, setStats] = useState(dashboardCache.stats);
+    const [casesByStatus, setCasesByStatus] = useState(dashboardCache.casesByStatus);
+    const [agencyPerf, setAgencyPerf] = useState(dashboardCache.agencyPerf);
+    const [loading, setLoading] = useState(!isCacheValid);
+    const [refreshing, setRefreshing] = useState(false);
+    const [toastMsg, setToastMsg] = useState(null);
+    const [lastRefreshed, setLastRefreshed] = useState(dashboardCache.lastRefreshed);
 
     useEffect(() => {
-        loadData();
+        if (!isCacheValid) {
+            loadData(false);
+        } else {
+            // Background revalidation without showing blank spinner
+            loadDataSilent();
+        }
     }, []);
 
-    const loadData = async () => {
+    const loadDataSilent = async () => {
         try {
             const [statsRes, statusRes, perfRes] = await Promise.all([
                 getDashboardStats(),
                 getCasesByStatus(),
                 getAgencyPerformance(5)
             ]);
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            dashboardCache = {
+                stats: statsRes.data,
+                casesByStatus: statusRes.data,
+                agencyPerf: perfRes.data,
+                lastRefreshed: now,
+                timestamp: Date.now()
+            };
+
             setStats(statsRes.data);
             setCasesByStatus(statusRes.data);
             setAgencyPerf(perfRes.data);
+            setLastRefreshed(now);
+        } catch (error) {
+            console.error('Silent dashboard update failed:', error);
+        }
+    };
+
+    const loadData = async (isManualRefresh = false) => {
+        if (isManualRefresh) setRefreshing(true);
+        try {
+            const [statsRes, statusRes, perfRes] = await Promise.all([
+                getDashboardStats(),
+                getCasesByStatus(),
+                getAgencyPerformance(5)
+            ]);
+
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            dashboardCache = {
+                stats: statsRes.data,
+                casesByStatus: statusRes.data,
+                agencyPerf: perfRes.data,
+                lastRefreshed: now,
+                timestamp: Date.now()
+            };
+
+            setStats(statsRes.data);
+            setCasesByStatus(statusRes.data);
+            setAgencyPerf(perfRes.data);
+            setLastRefreshed(now);
+
+            if (isManualRefresh) {
+                setToastMsg(`Dashboard data updated at ${now}`);
+                setTimeout(() => setToastMsg(null), 3500);
+            }
         } catch (error) {
             console.error('Failed to load dashboard data:', error);
+            if (isManualRefresh) {
+                setToastMsg('⚠️ Failed to refresh data. Please try again.');
+                setTimeout(() => setToastMsg(null), 3500);
+            }
         } finally {
             setLoading(false);
+            if (isManualRefresh) setRefreshing(false);
         }
     };
 
@@ -63,15 +133,33 @@ export default function Dashboard() {
 
     return (
         <div className="dashboard">
+            {toastMsg && (
+                <div className="refresh-toast-banner">
+                    <CheckCircle size={16} />
+                    <span>{toastMsg}</span>
+                </div>
+            )}
+
             <div className="page-header">
                 <div>
                     <h1 className="page-title">Dashboard</h1>
                     <p className="page-subtitle">Real-time overview of debt collection operations</p>
                 </div>
-                <button className="btn btn-primary" onClick={loadData}>
-                    <Zap size={16} />
-                    Refresh Data
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {lastRefreshed && (
+                        <span className="last-updated-text" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            Updated {lastRefreshed}
+                        </span>
+                    )}
+                    <button 
+                        className="btn btn-primary" 
+                        onClick={() => loadData(true)}
+                        disabled={refreshing}
+                    >
+                        <RefreshCw size={16} className={refreshing ? 'spin-icon' : ''} />
+                        {refreshing ? 'Refreshing...' : 'Refresh Data'}
+                    </button>
+                </div>
             </div>
 
             {/* KPI Grid */}

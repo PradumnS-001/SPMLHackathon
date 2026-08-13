@@ -13,7 +13,8 @@ from app.routers import (
     agencies_router,
     analytics_router,
     compliance_router,
-    auth_router
+    auth_router,
+    chatbot_router
 )
 
 # Configure logging
@@ -72,6 +73,7 @@ app.include_router(cases_router, prefix="/api/v1")
 app.include_router(agencies_router, prefix="/api/v1")
 app.include_router(analytics_router, prefix="/api/v1")
 app.include_router(compliance_router, prefix="/api/v1")
+app.include_router(chatbot_router, prefix="/api/v1")
 
 
 @app.get("/")

@@ -27,7 +27,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 || error.response?.status === 403) {
             localStorage.removeItem('token');
             window.location.href = '/login';
         }
@@ -89,7 +89,7 @@ export const getSegmentBreakdown = () =>
 export const getViolations = (params) =>
     api.get('/compliance/violations', { params });
 
-export const checkTranscript = (transcript, caseId, agencyId) =>
+export const checkTranscript = (transcript, caseId = 1, agencyId = 1) =>
     api.post('/compliance/check-transcript', {
         transcript,
         case_id: caseId,
@@ -111,5 +111,12 @@ export const register = (data) =>
 
 export const getCurrentUser = () =>
     api.get('/auth/me');
+
+// Chatbot
+export const sendChatMessage = (message, context) =>
+    api.post('/chatbot/chat', { message, context });
+
+export const getChatSuggestions = () =>
+    api.get('/chatbot/suggestions');
 
 export default api;

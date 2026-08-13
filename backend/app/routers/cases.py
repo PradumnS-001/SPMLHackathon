@@ -20,7 +20,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=List[schemas.CaseResponse])
+@router.get("", response_model=List[schemas.CaseResponse])
 async def list_cases(
     status: Optional[str] = None,
     agency_id: Optional[int] = None,

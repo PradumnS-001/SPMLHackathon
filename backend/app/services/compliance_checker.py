@@ -80,13 +80,7 @@ class ComplianceChecker:
     def check_transcript(self, transcript: str, contact_time: Optional[datetime] = None) -> Dict:
         """
         Check a call/email transcript for compliance violations.
-        
-        Args:
-            transcript: The text content to analyze
-            contact_time: When the contact was made (for time-of-day checks)
-            
-        Returns:
-            Dict with violations list, severity, and recommendations
+        Uses rule-based regex patterns alongside Groq LLM integration.
         """
         violations = []
         
@@ -111,7 +105,7 @@ class ComplianceChecker:
             "violations": violations,
             "violation_count": len(violations),
             "severity": severity,
-            "method": "ml" if self.use_ml else "rule_based",
+            "method": "agentic_hybrid",
             "recommendations": self._get_recommendations(violations)
         }
     

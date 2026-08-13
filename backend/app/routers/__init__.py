@@ -6,11 +6,13 @@ from .agencies import router as agencies_router
 from .analytics import router as analytics_router
 from .compliance import router as compliance_router
 from .auth import router as auth_router
+from .chatbot import router as chatbot_router
 
 __all__ = [
     "cases_router",
     "agencies_router", 
     "analytics_router",
     "compliance_router",
-    "auth_router"
+    "auth_router",
+    "chatbot_router"
 ]

@@ -1,6 +1,6 @@
 /**
  * Compliance Page
- * Violation tracking and transcript checking
+ * Violation tracking, FDCPA transcript checking, and audit-logged resolution
  */
 import { useState, useEffect } from 'react';
 import {
@@ -9,9 +9,13 @@ import {
     CheckCircle,
     XCircle,
     FileText,
-    Send
+    Send,
+    Filter,
+    X,
+    Check,
+    Info
 } from 'lucide-react';
-import { getViolations, checkTranscript, getComplianceStats } from '../services/api';
+import { getViolations, checkTranscript, getComplianceStats, resolveViolation } from '../services/api';
 import './Compliance.css';
 
 export default function Compliance() {
@@ -21,6 +25,11 @@ export default function Compliance() {
     const [transcript, setTranscript] = useState('');
     const [checkResult, setCheckResult] = useState(null);
     const [checking, setChecking] = useState(false);
+    const [filterSeverity, setFilterSeverity] = useState('all');
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [selectedViolation, setSelectedViolation] = useState(null);
+    const [resolutionNotes, setResolutionNotes] = useState('');
+    const [resolving, setResolving] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -29,7 +38,7 @@ export default function Compliance() {
     const loadData = async () => {
         try {
             const [violationsRes, statsRes] = await Promise.all([
-                getViolations({ limit: 10 }),
+                getViolations({ limit: 30 }),
                 getComplianceStats()
             ]);
             setViolations(violationsRes.data);
@@ -41,17 +50,45 @@ export default function Compliance() {
         }
     };
 
-    const handleCheckTranscript = async () => {
-        if (!transcript.trim()) return;
+    const handleCheckTranscript = async (sampleText) => {
+        const textToCheck = sampleText || transcript;
+        if (!textToCheck.trim()) return;
+
+        if (sampleText) {
+            setTranscript(sampleText);
+        }
 
         setChecking(true);
         try {
-            const response = await checkTranscript(transcript);
+            const response = await checkTranscript(textToCheck);
             setCheckResult(response.data);
+            // Refresh stats & list as new violation was logged to DB
+            loadData();
         } catch (error) {
             console.error('Transcript check failed:', error);
         } finally {
             setChecking(false);
+        }
+    };
+
+    const handleOpenResolveModal = (violation) => {
+        setSelectedViolation(violation);
+        setResolutionNotes('Agent completed mandatory FDCPA retraining and call script review.');
+    };
+
+    const handleConfirmResolve = async () => {
+        if (!selectedViolation || !resolutionNotes.trim()) return;
+
+        setResolving(true);
+        try {
+            await resolveViolation(selectedViolation.id, resolutionNotes.trim());
+            setSelectedViolation(null);
+            setResolutionNotes('');
+            await loadData();
+        } catch (error) {
+            console.error('Failed to resolve violation:', error);
+        } finally {
+            setResolving(false);
         }
     };
 
@@ -63,6 +100,13 @@ export default function Compliance() {
             default: return <AlertTriangle className="severity-icon low" />;
         }
     };
+
+    const filteredViolations = violations.filter(v => {
+        if (filterSeverity !== 'all' && v.severity !== filterSeverity) return false;
+        if (filterStatus === 'unresolved' && v.is_resolved) return false;
+        if (filterStatus === 'resolved' && !v.is_resolved) return false;
+        return true;
+    });
 
     if (loading) {
         return (
@@ -78,7 +122,7 @@ export default function Compliance() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">Compliance Monitor</h1>
-                    <p className="page-subtitle">Track violations and check transcripts</p>
+                    <p className="page-subtitle">FDCPA compliance inspection, violation logging & audit-trail resolution</p>
                 </div>
             </div>
 
@@ -95,7 +139,7 @@ export default function Compliance() {
                     <AlertTriangle size={24} />
                     <div>
                         <span className="stat-value">{stats?.unresolved_violations || 0}</span>
-                        <span className="stat-label">Unresolved</span>
+                        <span className="stat-label">Unresolved Queue</span>
                     </div>
                 </div>
                 {stats?.by_severity?.map((s) => (
@@ -109,30 +153,46 @@ export default function Compliance() {
             </div>
 
             <div className="compliance-grid">
-                {/* Transcript Checker */}
+                {/* Transcript Inspector */}
                 <div className="card transcript-checker">
                     <div className="card-header">
                         <h3 className="card-title">
                             <FileText size={18} />
-                            Transcript Checker
+                            FDCPA Transcript Inspector
                         </h3>
+                    </div>
+
+                    <div className="sample-prompts">
+                        <span className="sample-label">Test Sample:</span>
+                        <button
+                            className="btn btn-secondary btn-xs"
+                            onClick={() => handleCheckTranscript("Hello, this is RecoverMax. This is an attempt to collect a debt. Please call us back regarding invoice INV-2024001.")}
+                        >
+                            <CheckCircle size={12} style={{ color: 'var(--success)', marginRight: 4 }} /> Compliant Call
+                        </button>
+                        <button
+                            className="btn btn-secondary btn-xs"
+                            onClick={() => handleCheckTranscript("Pay us immediately or we will sue you, garnish your salary, and send you to prison!")}
+                        >
+                            <AlertTriangle size={12} style={{ color: 'var(--danger)', marginRight: 4 }} /> Violation Threat
+                        </button>
                     </div>
 
                     <textarea
                         className="transcript-input"
-                        placeholder="Paste call transcript or email content here to check for compliance violations..."
+                        placeholder="Paste call transcript or agent email text here..."
                         value={transcript}
                         onChange={(e) => setTranscript(e.target.value)}
-                        rows={6}
+                        rows={5}
                     ></textarea>
 
                     <button
                         className="btn btn-primary check-btn"
-                        onClick={handleCheckTranscript}
+                        onClick={() => handleCheckTranscript()}
                         disabled={checking || !transcript.trim()}
                     >
                         <Send size={16} />
-                        {checking ? 'Checking...' : 'Check Compliance'}
+                        {checking ? 'Analyzing Compliance...' : 'Run Compliance Inspection'}
                     </button>
 
                     {checkResult && (
@@ -141,29 +201,29 @@ export default function Compliance() {
                                 {checkResult.compliant ? (
                                     <>
                                         <CheckCircle size={20} />
-                                        <span>Compliant</span>
+                                        <span>Compliant (No FDCPA Violations Detected)</span>
                                     </>
                                 ) : (
                                     <>
                                         <XCircle size={20} />
-                                        <span>Violations Found ({checkResult.violation_count})</span>
+                                        <span>FDCPA Violation Detected ({checkResult.severity?.toUpperCase()} SEVERITY)</span>
                                     </>
                                 )}
                             </div>
 
-                            {checkResult.violations.length > 0 && (
+                            {checkResult.violations && checkResult.violations.length > 0 && (
                                 <ul className="violation-list">
                                     {checkResult.violations.map((v, i) => (
                                         <li key={i}>
-                                            <strong>{v.type}:</strong> {v.keyword || v.disclosure || v.contact_time}
+                                            <strong>{v.type}:</strong> {v.keyword ? `Forbidden keyword "${v.keyword}" used.` : v.disclosure ? `Missing required disclosure: ${v.disclosure}` : v.excerpt}
                                         </li>
                                     ))}
                                 </ul>
                             )}
 
-                            {checkResult.recommendations.length > 0 && (
+                            {checkResult.recommendations && checkResult.recommendations.length > 0 && (
                                 <div className="recommendations">
-                                    <strong>Recommendations:</strong>
+                                    <strong>Coaching Recommendations:</strong>
                                     <ul>
                                         {checkResult.recommendations.map((r, i) => (
                                             <li key={i}>{r}</li>
@@ -175,21 +235,42 @@ export default function Compliance() {
                     )}
                 </div>
 
-                {/* Recent Violations */}
+                {/* Recorded Violations */}
                 <div className="card">
-                    <div className="card-header">
-                        <h3 className="card-title">Recent Violations</h3>
+                    <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3 className="card-title">Recorded Violations</h3>
+                        <div className="filter-group" style={{ display: 'flex', gap: '8px' }}>
+                            <select
+                                className="form-select-sm"
+                                value={filterStatus}
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                            >
+                                <option value="all">All Status</option>
+                                <option value="unresolved">Unresolved Only</option>
+                                <option value="resolved">Resolved Only</option>
+                            </select>
+                            <select
+                                className="form-select-sm"
+                                value={filterSeverity}
+                                onChange={(e) => setFilterSeverity(e.target.value)}
+                            >
+                                <option value="all">All Severities</option>
+                                <option value="critical">Critical</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div className="violations-list">
-                        {violations.length === 0 ? (
+                        {filteredViolations.length === 0 ? (
                             <div className="empty-state">
                                 <CheckCircle size={48} />
-                                <p>No violations recorded</p>
+                                <p>No violations matching filter</p>
                             </div>
                         ) : (
-                            violations.map((violation) => (
-                                <div key={violation.id} className="violation-item">
+                            filteredViolations.map((violation) => (
+                                <div key={violation.id} className={`violation-item ${violation.is_resolved ? 'item-resolved' : ''}`}>
                                     <div className="violation-icon">
                                         {getSeverityIcon(violation.severity)}
                                     </div>
@@ -201,6 +282,14 @@ export default function Compliance() {
                                             </span>
                                         </div>
                                         <p className="violation-desc">{violation.description}</p>
+
+                                        {violation.is_resolved && violation.resolution_notes && (
+                                            <div className="resolution-audit-box">
+                                                <Info size={12} />
+                                                <span><strong>Resolution Action:</strong> {violation.resolution_notes}</span>
+                                            </div>
+                                        )}
+
                                         <div className="violation-meta">
                                             <span>Case #{violation.case_id}</span>
                                             <span>Agency #{violation.agency_id}</span>
@@ -213,7 +302,12 @@ export default function Compliance() {
                                                 <CheckCircle size={16} /> Resolved
                                             </span>
                                         ) : (
-                                            <button className="btn btn-secondary btn-sm">Resolve</button>
+                                            <button
+                                                className="btn btn-primary btn-sm resolve-btn"
+                                                onClick={() => handleOpenResolveModal(violation)}
+                                            >
+                                                Resolve Violation
+                                            </button>
                                         )}
                                     </div>
                                 </div>
@@ -222,6 +316,100 @@ export default function Compliance() {
                     </div>
                 </div>
             </div>
+
+            {/* Resolution Modal */}
+            {selectedViolation && (
+                <div className="modal-overlay">
+                    <div className="modal-content resolution-modal">
+                        <div className="modal-header">
+                            <h3 className="modal-title">
+                                <Shield size={20} /> Resolve Violation #{selectedViolation.id}
+                            </h3>
+                            <button className="close-btn" onClick={() => setSelectedViolation(null)}>
+                                <X size={18} />
+                            </button>
+                        </div>
+                        
+                        <div className="modal-body">
+                            <div className="violation-summary">
+                                <div className="summary-row">
+                                    <span className="summary-label">Violation Type:</span>
+                                    <strong className="summary-val">{selectedViolation.violation_type.replace('_', ' ')}</strong>
+                                </div>
+                                <div className="summary-row">
+                                    <span className="summary-label">Severity:</span>
+                                    <span className={`severity-badge ${selectedViolation.severity}`}>{selectedViolation.severity}</span>
+                                </div>
+                                <div className="summary-row">
+                                    <span className="summary-label">Target Case / Agency:</span>
+                                    <span className="summary-val">Case #{selectedViolation.case_id} (Agency #{selectedViolation.agency_id})</span>
+                                </div>
+                                <div className="summary-desc">
+                                    <strong>Description:</strong> {selectedViolation.description}
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Quick Action Presets:</label>
+                                <div className="preset-buttons">
+                                    <button
+                                        type="button"
+                                        className="preset-pill"
+                                        onClick={() => setResolutionNotes('Agent completed mandatory FDCPA retraining and call script review.')}
+                                    >
+                                        🎓 Agent FDCPA Retraining Completed
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="preset-pill"
+                                        onClick={() => setResolutionNotes('Call scripts updated with mandatory Mini-Miranda disclosures.')}
+                                    >
+                                        📜 Call Script Updated
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="preset-pill"
+                                        onClick={() => setResolutionNotes('Reviewed call audio recording with compliance team — verified false positive flag.')}
+                                    >
+                                        🔍 Audio Verified - False Positive
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Resolution Justification & Audit Notes *</label>
+                                <textarea
+                                    className="form-textarea"
+                                    rows={3}
+                                    value={resolutionNotes}
+                                    onChange={(e) => setResolutionNotes(e.target.value)}
+                                    placeholder="Enter details of corrective action taken..."
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        <div className="modal-footer">
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => setSelectedViolation(null)}
+                                disabled={resolving}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={handleConfirmResolve}
+                                disabled={resolving || !resolutionNotes.trim()}
+                            >
+                                <Check size={16} />
+                                {resolving ? 'Logging Resolution...' : 'Confirm & Log Resolution'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
