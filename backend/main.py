@@ -77,13 +77,24 @@ app = FastAPI(
 )
 
 # Configure CORS
+import os
+
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+allowed_origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://dca-frontend.onrender.com",
+]
+
+if cors_origins_env and cors_origins_env != "*":
+    for origin in cors_origins_env.split(","):
+        o = origin.strip()
+        if o and o not in allowed_origins:
+            allowed_origins.append(o)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://dca-frontend.onrender.com",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

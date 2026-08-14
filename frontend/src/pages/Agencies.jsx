@@ -18,9 +18,10 @@ export default function Agencies() {
     const loadAgencies = async () => {
         try {
             const response = await getAgencies();
-            setAgencies(response.data);
+            setAgencies(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error('Failed to load agencies:', error);
+            setAgencies([]);
         } finally {
             setLoading(false);
         }
