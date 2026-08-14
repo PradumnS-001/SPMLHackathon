@@ -34,7 +34,25 @@ async def lifespan(app: FastAPI):
     # Create database tables
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables created/verified")
-    
+
+    # Auto-seed database if empty
+    try:
+        from app.database import SessionLocal
+        from app import models
+        from seed_data import seed_agencies, seed_cases, seed_violations, seed_users
+        
+        db = SessionLocal()
+        if db.query(models.Agency).count() == 0:
+            logger.info("🌱 Database is empty. Auto-seeding initial demo data...")
+            agencies = seed_agencies(db)
+            cases = seed_cases(db, agencies)
+            violations = seed_violations(db, cases, agencies)
+            users = seed_users(db, agencies)
+            logger.info("✨ Auto-seeding completed successfully!")
+        db.close()
+    except Exception as e:
+        logger.error(f"Error during auto-seeding: {e}")
+
     yield
     
     # Shutdown

