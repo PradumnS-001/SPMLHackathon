@@ -19,8 +19,12 @@ export default function Login() {
         setIsLoading(true);
 
         try {
-            await login(email, password);
-            navigate('/dashboard');
+            const loggedInUser = await login(email, password);
+            if (loggedInUser?.role === 'admin') {
+                navigate('/dashboard');
+            } else {
+                navigate('/portal');
+            }
         } catch (err) {
             setError(err.response?.data?.detail || 'Failed to login. Please check your credentials.');
         } finally {

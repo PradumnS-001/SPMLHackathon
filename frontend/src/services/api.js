@@ -4,7 +4,18 @@
  */
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const getApiBaseUrl = () => {
+    const envUrl = import.meta.env.VITE_API_BASE_URL;
+    if (envUrl && envUrl.startsWith('http')) {
+        return envUrl;
+    }
+    if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
+        return 'https://dca-backend-cq1s.onrender.com/api/v1';
+    }
+    return '/api/v1';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance
 const api = axios.create({
@@ -25,7 +36,13 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        if (typeof response.data === 'string' && response.data.trim().startsWith('<!DOCTYPE html>')) {
+            console.error('API returned HTML instead of JSON. Check VITE_API_BASE_URL.');
+            return Promise.reject(new Error('Invalid API response format'));
+        }
+        return response;
+    },
     (error) => {
         if (error.response?.status === 401 || error.response?.status === 403) {
             localStorage.removeItem('token');
