@@ -30,24 +30,27 @@ async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     # Startup
     logger.info("Starting DCA Management System...")
-    # Log bcrypt/passlib versions to help diagnose password backend issues
+    # Log bcrypt/argon2 package versions without importing passlib to avoid
+    # triggering its bcrypt backend initialization. Use importlib.metadata
+    # to query installed package versions instead.
     try:
-        import bcrypt as _bcrypt
-        bcrypt_info = {
-            "has___about__": hasattr(_bcrypt, "__about__"),
-            "version": getattr(_bcrypt, "__version__", None),
-        }
-    except Exception as e:
-        bcrypt_info = {"error": str(e)}
+        from importlib import metadata
+        bcrypt_ver = None
+        argon2_ver = None
+        try:
+            bcrypt_ver = metadata.version("bcrypt")
+        except Exception:
+            bcrypt_ver = None
+        try:
+            argon2_ver = metadata.version("argon2-cffi")
+        except Exception:
+            argon2_ver = None
+    except Exception:
+        bcrypt_ver = None
+        argon2_ver = None
 
-    try:
-        import passlib
-        passlib_version = getattr(passlib, "__version__", None)
-    except Exception as e:
-        passlib_version = f"error: {e}"
-
-    logger.info(f"bcrypt info: {bcrypt_info}")
-    logger.info(f"passlib version: {passlib_version}")
+    logger.info(f"bcrypt version: {bcrypt_ver}")
+    logger.info(f"argon2-cffi version: {argon2_ver}")
     
     # Create database tables
     Base.metadata.create_all(bind=engine)

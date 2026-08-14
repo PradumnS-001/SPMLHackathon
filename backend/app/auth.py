@@ -1,11 +1,10 @@
-"""
-JWT Authentication utilities.
-Simple implementation for MVP - upgradeable to Keycloak.
+"""JWT Authentication utilities.
+Uses Argon2 for new password hashes and falls back to bcrypt verification
+for existing users to maintain compatibility with older seeded data.
 """
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -13,26 +12,55 @@ from . import models, schemas
 from .database import get_db
 import os
 
-# Configuration
+# Cryptography configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production-abc123xyz")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours for demo
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Use argon2 for new hashes
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError, InvalidHash
+ph = PasswordHasher()
+
+# Keep bcrypt available to verify existing bcrypt hashes
+import bcrypt
 
 # HTTP Bearer token scheme
 security = HTTPBearer()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a password against its hash.
+
+    Tries Argon2 first (for new hashes), then falls back to bcrypt if
+    Argon2 verification fails or the stored hash is a bcrypt hash.
+    """
+    if not hashed_password:
+        return False
+
+    # Try Argon2 verification
+    try:
+        # PasswordHasher.verify takes (hash, password)
+        return ph.verify(hashed_password, plain_password)
+    except VerifyMismatchError:
+        # Not an argon2 match; fall through to bcrypt check
+        pass
+    except InvalidHash:
+        # Stored hash is not a valid argon2 hash; try bcrypt
+        pass
+
+    # Fallback to bcrypt (stored hash expected as bytes)
+    try:
+        hp = hashed_password.encode() if isinstance(hashed_password, str) else hashed_password
+        pp = plain_password.encode()
+        return bcrypt.checkpw(pp, hp)
+    except Exception:
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password."""
-    return pwd_context.hash(password)
+    """Hash a password using Argon2 for storage."""
+    return ph.hash(password)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
