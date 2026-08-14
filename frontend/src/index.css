@@ -96,6 +96,14 @@ body {
   min-height: 100vh;
 }
 
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 1rem 0.75rem 72px; /* leave space at bottom for mobile tab bar */
+  }
+}
+
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;

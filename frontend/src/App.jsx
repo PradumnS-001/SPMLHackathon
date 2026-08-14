@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import ChatbotWidget from './components/ChatbotWidget';
+import MobileTabBar from './components/MobileTabBar';
 import Dashboard from './pages/Dashboard';
 import Cases from './pages/Cases';
 import Agencies from './pages/Agencies';
@@ -57,6 +58,7 @@ const AppLayout = ({ children }) => (
             <Header />
             {children}
             <ChatbotWidget />
+            <MobileTabBar />
         </div>
     </div>
 );
