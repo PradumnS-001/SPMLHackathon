@@ -41,10 +41,11 @@ export default function Compliance() {
                 getViolations({ limit: 30 }),
                 getComplianceStats()
             ]);
-            setViolations(violationsRes.data);
+            setViolations(Array.isArray(violationsRes.data) ? violationsRes.data : []);
             setStats(statsRes.data);
         } catch (error) {
             console.error('Failed to load compliance data:', error);
+            setViolations([]);
         } finally {
             setLoading(false);
         }
@@ -101,7 +102,8 @@ export default function Compliance() {
         }
     };
 
-    const filteredViolations = violations.filter(v => {
+    const safeViolations = Array.isArray(violations) ? violations : [];
+    const filteredViolations = safeViolations.filter(v => {
         if (filterSeverity !== 'all' && v.severity !== filterSeverity) return false;
         if (filterStatus === 'unresolved' && v.is_resolved) return false;
         if (filterStatus === 'resolved' && !v.is_resolved) return false;

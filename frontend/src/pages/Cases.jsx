@@ -33,9 +33,10 @@ export default function Cases() {
             if (filter.segment) params.segment = filter.segment;
 
             const response = await getCases(params);
-            setCases(response.data);
+            setCases(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error('Failed to load cases:', error);
+            setCases([]);
         } finally {
             setLoading(false);
         }
@@ -45,7 +46,8 @@ export default function Cases() {
         setAssigning(true);
         try {
             const response = await assignCases();
-            setAssignmentResults(response.data.assignments);
+            const results = Array.isArray(response.data?.assignments) ? response.data.assignments : [];
+            setAssignmentResults(results);
             loadCases(); // Refresh the list
         } catch (error) {
             console.error('Assignment failed:', error);
@@ -62,6 +64,8 @@ export default function Cases() {
 
     const formatCurrency = (value) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+
+    const safeAssignmentResults = Array.isArray(assignmentResults) ? assignmentResults : [];
 
     return (
         <div className="cases-page">
@@ -81,13 +85,13 @@ export default function Cases() {
             </div>
 
             {/* Assignment Results Banner */}
-            {assignmentResults && assignmentResults.length > 0 && (
+            {safeAssignmentResults.length > 0 && (
                 <div className="assignment-banner">
                     <CheckCircle size={20} />
                     <span>
-                        Successfully assigned {assignmentResults.length} cases.
-                        Methods used: {assignmentResults.filter(r => r.method === 'ai').length} AI,
-                        {assignmentResults.filter(r => r.method === 'fallback').length} Fallback
+                        Successfully assigned {safeAssignmentResults.length} cases.
+                        Methods used: {safeAssignmentResults.filter(r => r.method === 'ai').length} AI,
+                        {safeAssignmentResults.filter(r => r.method === 'fallback').length} Fallback
                     </span>
                     <button onClick={() => setAssignmentResults(null)}>×</button>
                 </div>

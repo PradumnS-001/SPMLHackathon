@@ -59,18 +59,19 @@ export default function Header() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const safeNotifs = Array.isArray(notifications) ? notifications : [];
+    const unreadCount = safeNotifs.filter(n => !n.read).length;
 
     const markAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        setNotifications(prev => (Array.isArray(prev) ? prev : []).map(n => ({ ...n, read: true })));
     };
 
     const toggleRead = (id) => {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: !n.read } : n));
+        setNotifications(prev => (Array.isArray(prev) ? prev : []).map(n => n.id === id ? { ...n, read: !n.read } : n));
     };
 
     const dismissNotification = (id) => {
-        setNotifications(prev => prev.filter(n => n.id !== id));
+        setNotifications(prev => (Array.isArray(prev) ? prev : []).filter(n => n.id !== id));
     };
 
     return (

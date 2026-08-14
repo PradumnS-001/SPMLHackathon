@@ -33,9 +33,10 @@ export default function AgencyPortal() {
     const loadCases = async () => {
         try {
             const response = await getAgencyCases(agencyId);
-            setCases(response.data);
+            setCases(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error('Failed to load cases:', error);
+            setCases([]);
         } finally {
             setLoading(false);
         }
@@ -64,8 +65,9 @@ export default function AgencyPortal() {
         return 'low';
     };
 
-    const activeCases = cases.filter(c => c.status !== 'resolved');
-    const resolvedCases = cases.filter(c => c.status === 'resolved');
+    const safeCases = Array.isArray(cases) ? cases : [];
+    const activeCases = safeCases.filter(c => c.status !== 'resolved');
+    const resolvedCases = safeCases.filter(c => c.status === 'resolved');
 
     if (loading) {
         return (
