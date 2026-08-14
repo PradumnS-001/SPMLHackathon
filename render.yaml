@@ -32,5 +32,6 @@ services:
         fromService:
           type: web
           name: dca-backend
-          property: url
+          property: host
+        prefix: https://
         suffix: /api/v1
