@@ -92,10 +92,24 @@ if cors_origins_env and cors_origins_env != "*":
         if o and o not in allowed_origins:
             allowed_origins.append(o)
 
+# If CORS_ORIGINS is explicitly set to '*', allow all origins (no credentials).
+# When using wildcard origins, browsers disallow Access-Control-Allow-Credentials,
+# so we disable credentials in that case. For stricter setups provide a comma
+# separated list of allowed origins via the CORS_ORIGINS env var.
+use_wildcard = cors_origins_env == "*"
+if use_wildcard:
+    cors_allow_origins = ["*"]
+    cors_allow_credentials = False
+else:
+    cors_allow_origins = allowed_origins
+    cors_allow_credentials = True
+
+logger.info(f"CORS configuration: allow_origins={cors_allow_origins}, allow_credentials={cors_allow_credentials}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_origins=cors_allow_origins,
+    allow_credentials=cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )

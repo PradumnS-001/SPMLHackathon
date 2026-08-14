@@ -7,6 +7,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 from dotenv import load_dotenv
+import logging
+from sqlalchemy.engine import make_url
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,6 +20,20 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dca_management.db")
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
     connect_args["check_same_thread"] = False
+else:
+    # For Postgres/Supabase connections ensure SSL mode is required when not
+    # explicitly provided. Some managed hosts require SSL and will refuse
+    # non-SSL connections.
+    if DATABASE_URL.startswith("postgres") and "sslmode" not in DATABASE_URL:
+        connect_args["sslmode"] = "require"
+
+# Logging: avoid printing credentials
+logger = logging.getLogger(__name__)
+try:
+    parsed = make_url(DATABASE_URL)
+    logger.info(f"Database configured: {parsed.drivername}://{parsed.host}:{parsed.port}/{parsed.database}")
+except Exception:
+    logger.info("Database configured: [unable to parse DATABASE_URL]")
 
 # Create engine
 engine = create_engine(
