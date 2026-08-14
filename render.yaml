@@ -10,6 +10,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.8
+      - key: DATABASE_URL
+        sync: false
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL
@@ -17,7 +19,7 @@ services:
       - key: CORS_ORIGINS
         value: "*"
       - key: SECRET_KEY
-        generateValue: true
+        sync: false
 
   # Frontend Static Site
   - type: web
